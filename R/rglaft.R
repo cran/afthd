@@ -28,6 +28,7 @@
 #' @examples
 #' ##
 #' data(hdata)
+#' set.seed(1000)
 #' rglaft(9,50,STime="os",Event="death",1,hdata)
 #' ##
 #' @export
@@ -107,3 +108,4 @@ rglaft<-function(m,n,STime,Event,alpha,data){
   mtx<-mtx[order(mtx[,4]),]
   return(mtx)
 }
+

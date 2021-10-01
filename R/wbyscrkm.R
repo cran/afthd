@@ -69,7 +69,7 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
   d12<-data.frame(data[,c('death2','os')],d11)
   len<-length(d11)
   if(len>5){
-    message("Estimates for first 5 covariates : ")
+    cat("Estimates for first 5 covariates : ")
     vv<-subset(d11,select = c(1:5))
   } else {
     vv<-d11
@@ -97,16 +97,21 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
   }
 
   if(is.numeric(dstatus1)==T){
+
+    mx<-max(dt01$os) + 10
     surt1<-ifelse(dt01$death2 == 1, dt01$os, NA)
-    stcen1<-ifelse(dt01$death2 == 0, dt01$os, 0)
+    stcen1<-ifelse(dt01$death2 == 0, dt01$os, mx)
     dt01$os<-surt1
+    cen1<-as.numeric(is.na(surt1))
+    dt01<-data.frame(dt01,stcen1,cen1)
 
     if(len==1){
-      data1<-list(os=dt01$os, v1=vv1[,1], N = nr1 )
+      data1<-list(os=dt01$os, stcen1=dt01$stcen1, cen1=dt01$cen1, v1=vv1[,1], N = nr1 )
       modelj1<-function(){
         for (i in 1:N) {
           sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
           os[i] ~ dweib(alpha,lambda[i])
+          cen1[i] ~ dinterval(os[i],stcen1[i])
           lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
           mu[i] <-  beta1[1] + beta1[2]*sV1[i]
         }
@@ -127,12 +132,13 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
       jagsft1 <- jags(model.file=modelj1, data=data1, inits = inits1,
                       parameters.to.save = c('beta1','tau','alpha','sigma'), n.chains=nc, n.iter = ni)
     } else if(len==2){
-      data2<-list(os=dt01$os, v1=vv1[,1], v2=vv1[,2], N = nr1 )
+      data2<-list(os=dt01$os, stcen1=dt01$stcen1, cen1=dt01$cen1, v1=vv1[,1], v2=vv1[,2], N = nr1 )
       modelj2<-function(){
         for (i in 1:N) {
           sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
           sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
           os[i] ~ dweib(alpha,lambda[i])
+          cen1[i] ~ dinterval(os[i],stcen1[i])
           lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
           mu[i] <-  beta1[1] + beta1[2]*sV1[i] + beta1[3]*sV2[i]
         }
@@ -153,13 +159,14 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
       jagsft1 <- jags(model.file=modelj2, data=data2, inits = inits2,
                       parameters.to.save = c('beta1','tau','alpha','sigma'), n.chains=nc, n.iter = ni)
     } else if(len==3){
-      data3<-list(os=dt01$os, v1=vv1[,1], v2=vv1[,2], v3=vv1[,3], N = nr1 )
+      data3<-list(os=dt01$os, stcen1=dt01$stcen1, cen1=dt01$cen1, v1=vv1[,1], v2=vv1[,2], v3=vv1[,3], N = nr1 )
       modelj3<-function(){
         for (i in 1:N) {
           sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
           sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
           sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
           os[i] ~ dweib(alpha,lambda[i])
+          cen1[i] ~ dinterval(os[i],stcen1[i])
           lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
           mu[i] <-  beta1[1] + beta1[2]*sV1[i] + beta1[3]*sV2[i] + beta1[4]*sV3[i]
         }
@@ -179,7 +186,7 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
       jagsft1 <- jags(model.file=modelj3, data=data3, inits = inits3,
                       parameters.to.save = c('beta1','tau','alpha','sigma'), n.chains=nc, n.iter = ni)
     } else if(len==4){
-      data4<-list(os=dt01$os, v1=vv1[,1], v2=vv1[,2], v3=vv1[,3], v4=vv1[,4], N = nr1 )
+      data4<-list(os=dt01$os, stcen1=dt01$stcen1, cen1=dt01$cen1, v1=vv1[,1], v2=vv1[,2], v3=vv1[,3], v4=vv1[,4], N = nr1 )
       modelj4<-function(){
         for (i in 1:N) {
           sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -187,6 +194,7 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
           sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
           sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
           os[i] ~ dweib(alpha,lambda[i])
+          cen1[i] ~ dinterval(os[i],stcen1[i])
           lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
           mu[i] <-  beta1[1] + beta1[2]*sV1[i] + beta1[3]*sV2[i] + beta1[4]*sV3[i] + beta1[5]*sV4[i]
         }
@@ -207,7 +215,7 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
       jagsft1 <- jags(model.file=modelj4, data=data4, inits = inits4,
                       parameters.to.save = c('beta1','tau','alpha','sigma'), n.chains=nc, n.iter = ni)
     } else {
-      data5 <- list(os=dt01$os, v1=vv1[,1], v2=vv1[,2], v3=vv1[,3], v4=vv1[,4], v5=vv1[,5], N = nr1 )
+      data5 <- list(os=dt01$os, stcen1=dt01$stcen1, cen1=dt01$cen1, v1=vv1[,1], v2=vv1[,2], v3=vv1[,3], v4=vv1[,4], v5=vv1[,5], N = nr1 )
       modelj5<-function(){
         for (i in 1:N) {
           sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -216,6 +224,7 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
           sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
           sV5[i] <- (v5[i]-mean(v5[]))/sd(v5[])
           os[i] ~ dweib(alpha,lambda[i])
+          cen1[i] ~ dinterval(os[i],stcen1[i])
           lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
           mu[i] <-  beta1[1] + beta1[2]*sV1[i] + beta1[3]*sV2[i] + beta1[4]*sV3[i]
           + beta1[5]*sV4[i] + beta1[6]*sV5[i]
@@ -237,24 +246,28 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
                       parameters.to.save = c('beta1','tau','alpha','sigma'), n.chains=nc, n.iter = ni)
     }
 
-    message("Estimation for event status (0,1) for variables:- ", vn,"\n")
+    cat("Estimation for event status (0,1) for variables:- ", vn,"\n")
     f1=data.frame(jagsft1$BUGSoutput$summary)
-    return(f1)
+    print(f1)
 
   }
 
-
   if(is.numeric(dstatus2)==T){
+
+    mx2<-max(dt02$os) + 10
     surt2<-ifelse(dt02$death2 == 2, dt02$os, NA)
-    stcen2<-ifelse(dt02$death2 == 0, dt02$os, 0)
+    stcen2<-ifelse(dt02$death2 == 0, dt02$os, mx2)
     dt02$os<-surt2
+    cen2<-as.numeric(is.na(surt2))
+    dt02<-data.frame(dt02,stcen2,cen2)
 
     if(len==1){
-      data21<-list(os=dt02$os, v1=vv2[,1], N = nr2 )
+      data21<-list(os=dt02$os, stcen2=dt02$stcen2, cen2=dt02$cen2, v1=vv2[,1], N = nr2 )
       modelj21<-function(){
         for (i in 1:N) {
           sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
           os[i] ~ dweib(alpha,lambda[i])
+          cen2[i] ~ dinterval(os[i],stcen2[i])
           lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
           mu[i] <-  beta2[1] + beta2[2]*sV1[i]
         }
@@ -275,12 +288,13 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
       jagsft2 <- jags(model.file=modelj21, data=data21, inits = inits21,
                       parameters.to.save = c('beta2','tau','alpha','sigma'), n.chains=nc, n.iter = ni)
     } else if(len==2){
-      data22<-list(os=dt02$os, v1=vv2[,1], v2=vv2[,2], N = nr2 )
+      data22<-list(os=dt02$os, stcen2=dt02$stcen2, cen2=dt02$cen2, v1=vv2[,1], v2=vv2[,2], N = nr2 )
       modelj22<-function(){
         for (i in 1:N) {
           sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
           sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
           os[i] ~ dweib(alpha,lambda[i])
+          cen2[i] ~ dinterval(os[i],stcen2[i])
           lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
           mu[i] <-  beta2[1] + beta2[2]*sV1[i] + beta2[3]*sV2[i]
         }
@@ -301,13 +315,14 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
       jagsft2 <- jags(model.file=modelj22, data=data22, inits = inits22,
                       parameters.to.save = c('beta2','tau','alpha','sigma'), n.chains=nc, n.iter = ni)
     } else if(len==3){
-      data23<-list(os=dt02$os, v1=vv2[,1], v2=vv2[,2], v3=vv2[,3], N = nr2 )
+      data23<-list(os=dt02$os, stcen2=dt02$stcen2, cen2=dt02$cen2, v1=vv2[,1], v2=vv2[,2], v3=vv2[,3], N = nr2 )
       modelj23<-function(){
         for (i in 1:N) {
           sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
           sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
           sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
           os[i] ~ dweib(alpha,lambda[i])
+          cen2[i] ~ dinterval(os[i],stcen2[i])
           lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
           mu[i] <-  beta2[1] + beta2[2]*sV1[i] + beta2[3]*sV2[i] + beta2[4]*sV3[i]
         }
@@ -327,7 +342,7 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
       jagsft2 <- jags(model.file=modelj23, data=data23, inits = inits23,
                       parameters.to.save = c('beta2','tau','alpha','sigma'), n.chains=nc, n.iter = ni)
     } else if(len==4){
-      data24<-list(os=dt02$os, v1=vv2[,1], v2=vv2[,2], v3=vv2[,3], v4=vv2[,4], N = nr2 )
+      data24<-list(os=dt02$os, stcen2=dt02$stcen2, cen2=dt02$cen2, v1=vv2[,1], v2=vv2[,2], v3=vv2[,3], v4=vv2[,4], N = nr2 )
       modelj24<-function(){
         for (i in 1:N) {
           sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -335,6 +350,7 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
           sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
           sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
           os[i] ~ dweib(alpha,lambda[i])
+          cen2[i] ~ dinterval(os[i],stcen2[i])
           lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
           mu[i] <-  beta2[1] + beta2[2]*sV1[i] + beta2[3]*sV2[i] + beta2[4]*sV3[i]
           + beta2[5]*sV4[i]
@@ -357,7 +373,7 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
       jagsft2 <- jags(model.file=modelj24, data=data24, inits = inits24,
                       parameters.to.save = c('beta2','tau','alpha','sigma'), n.chains=nc, n.iter = ni)
     } else {
-      data25 <- list(os=dt02$os, v1=vv2[,1], v2=vv2[,2], v3=vv2[,3], v4=vv2[,4], v5=vv2[,5], N = nr2 )
+      data25 <- list(os=dt02$os, stcen2=dt02$stcen2, cen2=dt02$cen2, v1=vv2[,1], v2=vv2[,2], v3=vv2[,3], v4=vv2[,4], v5=vv2[,5], N = nr2 )
       modelj25<-function(){
         for (i in 1:N) {
           sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -366,6 +382,7 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
           sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
           sV5[i] <- (v5[i]-mean(v5[]))/sd(v5[])
           os[i] ~ dweib(alpha,lambda[i])
+          cen2[i] ~ dinterval(os[i],stcen2[i])
           lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
           mu[i] <-  beta2[1] + beta2[2]*sV1[i] + beta2[3]*sV2[i] + beta2[4]*sV3[i]
           + beta2[5]*sV4[i] + beta2[6]*sV5[i]
@@ -387,9 +404,9 @@ wbyscrkm=function(m,n,STime,Event,nc,ni,data){
                       parameters.to.save = c('beta2','tau','alpha','sigma'), n.chains=nc, n.iter = ni)
     }
 
-    message("Estimation for event status (0,2) for variables: ", vn,"\n")
+    cat("Estimation for event status (0,2) for variables: ", vn,"\n")
     f2=data.frame(jagsft2$BUGSoutput$summary)
-    return(f2)
+    print(f2)
 
   }
   } else{

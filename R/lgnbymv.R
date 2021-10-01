@@ -71,12 +71,13 @@ lgnbymv=function(m,n,STime,Event,nc,ni,data){
   len<-length(d11)
 
   d12<-data.frame(data[,c('death','os')],d11)
-  nnr<-nrow(d12)
-  nnc<-ncol(d12)
 
+  mx<-max(d12$os) + 10
   surt<-ifelse(d12$death == 1, d12$os, NA)
-  stcen<-ifelse(d12$death == 0, d12$os, 0)
+  stcen<-ifelse(d12$death == 0, d12$os, mx)
   d12$os<-surt
+  cen<-as.numeric(is.na(surt))
+  d12<-data.frame(d12,stcen,cen)
 
   if(len>5){
     cat("Outcome for first 5 covariates : ")
@@ -86,11 +87,12 @@ lgnbymv=function(m,n,STime,Event,nc,ni,data){
   }
   vname<-colnames(vv)
   if(len==1){
-    data1<-list(os=d12$os, v1=vv[,1], N = nr)
+    data1<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], N = nr)
     modelj1<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         os[i] ~ dlnorm(mu[i], tau)
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i]
       }
       for(i in 1:2){
@@ -108,12 +110,13 @@ lgnbymv=function(m,n,STime,Event,nc,ni,data){
                    parameters.to.save = c('beta','tau','sigma'), n.chains = nc, n.iter = ni)
 
   } else if(len==2){
-    data2<-list(os=d12$os, v1=vv[,1], v2=vv[,2], N = nr)
+    data2<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], N = nr)
     modelj2<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         os[i] ~ dlnorm(mu[i], tau)
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i]
       }
 
@@ -132,13 +135,14 @@ lgnbymv=function(m,n,STime,Event,nc,ni,data){
     jagsft <- jags(model.file=modelj2, data=data2, inits = inits2,
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
   } else if(len==3){
-    data3<-list(os=d12$os, v1=vv[,1], v2=vv[,2], v3=vv[,3], N = nr)
+    data3<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], v3=vv[,3], N = nr)
     modelj3<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         os[i] ~ dlnorm(mu[i], tau)
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i]
       }
       for(i in 1:4){
@@ -155,7 +159,7 @@ lgnbymv=function(m,n,STime,Event,nc,ni,data){
     jagsft <- jags(model.file=modelj3, data=data3, inits = inits3,
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
   } else if(len==4){
-    data4<-list(os=d12$os, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], N = nr)
+    data4<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], N = nr)
     modelj4<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -163,6 +167,7 @@ lgnbymv=function(m,n,STime,Event,nc,ni,data){
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         os[i] ~ dlnorm(mu[i],tau)
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i] + beta[5]*sV4[i]
       }
       for(i in 1:5){
@@ -180,7 +185,7 @@ lgnbymv=function(m,n,STime,Event,nc,ni,data){
     jagsft <- jags(model.file=modelj4, data=data4, inits = inits4,
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
   } else {
-    data5<-list(os=d12$os, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], v5=vv[,5], N = nr)
+    data5<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], v5=vv[,5], N = nr)
     modelj5<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -189,6 +194,7 @@ lgnbymv=function(m,n,STime,Event,nc,ni,data){
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         sV5[i] <- (v5[i]-mean(v5[]))/sd(v5[])
         os[i] ~ dlnorm(mu[i], tau)
+        cen[i] ~ dinterval(os[i], stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i]
                   + beta[5]*sV4[i] + beta[6]*sV5[i]
       }
@@ -207,7 +213,7 @@ lgnbymv=function(m,n,STime,Event,nc,ni,data){
     jagsft <- jags(model.file=modelj5, data=data5, inits = inits5,
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
   }
-  message("Estimates for variables: ", vname,"\n")
+  cat("Estimates for variables: ", vname,"\n")
   f=data.frame(jagsft$BUGSoutput$summary)
   return(f)
 

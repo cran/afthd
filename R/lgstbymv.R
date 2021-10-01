@@ -69,12 +69,16 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
   len<-length(d11)
 
   d12<-data.frame(data[,c('death','os')],d11)
-  nnr<-nrow(d12)
-  nnc<-ncol(d12)
 
+  mx<-max(d12$os) + 100
   surt<-ifelse(d12$death == 1, d12$os, NA)
-  stcen<-ifelse(d12$death == 0, d12$os, 0)
-  d12$os<-surt
+  stcen<-ifelse(d12$death == 0, d12$os, mx)
+  stcen<-log(stcen)
+  ls<-log(surt)
+  d12$os<- ls
+  cen<-as.numeric(is.na(surt))
+  d12<-data.frame(d12,stcen,cen)
+
 
   if(len>5){
     cat("Outcome for first 5 covariates : ")
@@ -85,12 +89,12 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
 
   vname<-colnames(vv)
   if(len==1){
-    data1<-list(os=d12$os, v1=vv[,1], N = nr)
+    data1<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], N = nr)
     modelj1<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         os[i] ~ dlogis(mu[i], taustar)
-        logos[i]<-os[i]
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <- beta[1] + beta[2]*sV1[i]
       }
       taustar <- sqrt(tau)
@@ -101,7 +105,7 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
       }
       tau ~ dgamma(0.001,0.001)
       sigma <- sqrt(1/tau)
-      junk1 <- os[1]
+      junk1 <- exp(os[1])
 
     }
 
@@ -112,13 +116,13 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc,
                    n.iter = ni)
   } else if(len==2){
-    data2<-list(os=d12$os, v1=vv[,1], v2=vv[,2], N = nr)
+    data2<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], N = nr)
     modelj2<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         os[i] ~ dlogis(mu[i], taustar)
-        logos[i]<-os[i]
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i]
       }
       taustar <- sqrt(tau)
@@ -129,7 +133,7 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
       }
       tau ~ dgamma(0.001,0.001)
       sigma <- sqrt(1/tau)
-      junk1 <- os[1]
+      junk1 <- exp(os[1])
     }
 
     inits2 <- function() {
@@ -139,14 +143,14 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc,
                    n.iter = ni)
   } else if(len==3){
-    data3<-list(os=d12$os, v1=vv[,1], v2=vv[,2], v3=vv[,3], N = nr)
+    data3<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], v3=vv[,3], N = nr)
     modelj3<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         os[i] ~ dlogis(mu[i], taustar)
-        logos[i]<-os[i]
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i]
       }
       taustar <- sqrt(tau)
@@ -157,7 +161,7 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
       }
       tau ~ dgamma(0.001,0.001)
       sigma <- sqrt(1/tau)
-      junk1 <- os[1]
+      junk1 <- exp(os[1])
     }
     inits3 <- function() {
       list(beta=c(0,0,0,0), tau=1)
@@ -166,7 +170,7 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc,
                    n.iter = ni)
   } else if(len==4){
-    data4<-list(os=d12$os, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], N = nr)
+    data4<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], N = nr)
     modelj4<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -174,7 +178,7 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         os[i] ~ dlogis(mu[i], taustar)
-        logos[i]<-os[i]
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i]
         + beta[5]*sV4[i]
       }
@@ -186,7 +190,7 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
       }
       tau ~ dgamma(0.001,0.001)
       sigma <- sqrt(1/tau)
-      junk1 <- os[1]
+      junk1 <- exp(os[1])
     }
 
     inits4 <- function() {
@@ -196,7 +200,7 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc,
                    n.iter = ni)
   } else {
-    data5<-list(os=d12$os, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], v5=vv
+    data5<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], v5=vv
                 [,5], N = nr)
     modelj5<-function(){
       for (i in 1:N) {
@@ -206,7 +210,7 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         sV5[i] <- (v5[i]-mean(v5[]))/sd(v5[])
         os[i] ~ dlogis(mu[i], taustar)
-        logos[i]<-os[i]
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <- beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i] + beta[5]*sV4[i] + beta[6]*sV5[i]
       }
       taustar <- sqrt(tau)
@@ -217,7 +221,7 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
       }
       tau ~ dgamma(0.001,0.001)
       sigma <- sqrt(1/tau)
-      junk1 <- os[1]
+      junk1 <- exp(os[1])
     }
 
     inits5 <- function() {
@@ -227,9 +231,10 @@ lgstbymv=function(m,n,STime,Event,nc,ni,data){
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc,
                    n.iter = ni)
   }
-  message("Estimates for variables: ", vname,"\n")
+  cat("Estimates for variables: ", vname,"\n")
   f=data.frame(jagsft$BUGSoutput$summary)
   return(f)
 }
+
 utils::globalVariables(c("N","v1","sd","v2","v3","v4","v5","tau","step","os"))
 

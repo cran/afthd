@@ -27,6 +27,7 @@
 #' @examples
 #' ##
 #' data(hdata)
+#' set.seed(1000)
 #' rglwbysu(9,45,STime="os",Event="death",2,10,1,hdata)
 #' ##
 #'
@@ -35,7 +36,7 @@
 #' @seealso wbysuni,wbysmv, rglwbysm
 #'
 
-rglwbysu=function(m,n,STime,Event,nc,ni,alpha,data){
+ rglwbysu=function(m,n,STime,Event,nc,ni,alpha,data){
   a<-alpha
   nr<-nrow(data)
 
@@ -92,22 +93,26 @@ rglwbysu=function(m,n,STime,Event,nc,ni,alpha,data){
   }
   fdt<-subset(d11,select = pnt1)
   d12<-data.frame(data[,c('death','os')],fdt)
-  nnr<-nrow(d12)
 
+  mx<-max(d12$os) + 10
   surt<-ifelse(d12$death == 1, d12$os, NA)
-  stcen<-ifelse(d12$death == 0, d12$os, 0)
+  stcen<-ifelse(d12$death == 0, d12$os, mx)
   d12$os<-surt
-    vv<-fdt
-    mtx<-matrix(nrow=ln, ncol = 8)
-    colnames(mtx)<-c("coef","SD","2.5%","25%","50%","75%","97.5%","deviance")
-    rownames(mtx)<-colnames(fdt)
+  cen<-as.numeric(is.na(surt))
+  d12<-data.frame(d12,stcen,cen)
+
+  vv<-fdt
+  mtx<-matrix(nrow=ln, ncol = 8)
+  colnames(mtx)<-c("coef","SD","2.5%","25%","50%","75%","97.5%","deviance")
+  rownames(mtx)<-colnames(fdt)
 
   for(j in 1:ln){
-    data1<-list(os=d12$os, v1=vv[,j], N = nr)
+    data1<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,j], N = nr)
     modelj1<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         os[i] ~ dweib(alpha,lambda[i])
+        cen[i] ~ dinterval(os[i],stcen[i])
         lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i]
       }
@@ -133,7 +138,7 @@ rglwbysu=function(m,n,STime,Event,nc,ni,alpha,data){
     mtx[j,8]<-f[3,1]
    }
     if(nrow(mtx)!=0){
-    message("Estimates for variables:  ", colnames(fdt),"\n")
+    cat("Estimates for variables:  ", colnames(fdt),"\n")
     return(mtx)
     } else{
     warning("No return value, check for right entry or called for side effects")

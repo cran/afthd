@@ -37,6 +37,7 @@ This function deals covariates (in data) with missing values. Missing value in a
 \examples{
 ##
 data(hdata)
+set.seed(1000)
 rglwbysm(9,45,STime="os",Event="death",2,10,1,hdata)
 ##
 

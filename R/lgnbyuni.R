@@ -65,14 +65,15 @@ lgnbyuni=function(m,n,STime,Event,nc,ni,data){
   }
 
   len<-length(d11)
-
   d12<-data.frame(data[,c('death','os')],d11)
-  nnr<-nrow(d12)
-  nnc<-ncol(d12)
 
+  mx<-max(d12$os) + 10
   surt<-ifelse(d12$death == 1, d12$os, NA)
-  stcen<-ifelse(d12$death == 0, d12$os, 0)
+  stcen<-ifelse(d12$death == 0, d12$os, mx)
   d12$os<-surt
+  cen<-as.numeric(is.na(surt))
+  d12<-data.frame(d12,stcen,cen)
+
   vv<-d11
 
   mtx<-matrix(nrow=len, ncol = 10)
@@ -81,11 +82,12 @@ lgnbyuni=function(m,n,STime,Event,nc,ni,data){
   mtx<-data.frame(mtx)
 
   for(j in 1:len){
-    data1<-list(os=d12$os, v1=vv[,j], N = nr)
+    data1<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,j], N = nr)
     modelj1<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         os[i] ~ dlnorm(mu[i], tau)
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i]
       }
 

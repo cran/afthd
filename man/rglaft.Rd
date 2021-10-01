@@ -36,6 +36,7 @@ Where \eqn{\eta} and \eqn{\eta} are linear predictor.
 \examples{
 ##
 data(hdata)
+set.seed(1000)
 rglaft(9,50,STime="os",Event="death",1,hdata)
 ##
 }

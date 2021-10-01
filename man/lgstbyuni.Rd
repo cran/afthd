@@ -38,7 +38,7 @@ When baseline distribution is logistic then T follows log logistic distribution.
 \examples{
 ##
 data(hdata)
-lgstbyuni(12,14,STime="os",Event="death",5,10,hdata)
+lgstbyuni(12,14,STime="os",Event="death",3,100,hdata)
 ##
 }
 \references{

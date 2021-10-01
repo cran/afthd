@@ -93,20 +93,25 @@
     }
 
     if(is.numeric(dstatus1)==T){
+
+      mx<-max(dt01$os) + 10
       surt1<-ifelse(dt01$death2 == 1, dt01$os, NA)
-      stcen1<-ifelse(dt01$death2 == 0, dt01$os, 0)
+      stcen1<-ifelse(dt01$death2 == 0, dt01$os, mx)
       dt01$os<-surt1
+      cen1<-as.numeric(is.na(surt1))
+      dt01<-data.frame(dt01,stcen1,cen1)
 
       mtx1<-matrix(nrow=len, ncol = 8)
       colnames(mtx1)<-c("coef","SD","2.5%","25%","50%","75%","97.5%","deviance")
       rownames(mtx1)<-colnames(vv1)
 
       for(j in 1:len){
-        data1<-list(os=dt01$os, v1=vv1[,j], N = nr1)
+        data1<-list(os=dt01$os, stcen1=dt01$stcen1, cen1=dt01$cen1, v1=vv1[,j], N = nr1)
         model1<-function(){
           for (i in 1:N) {
             sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
             os[i] ~ dweib(alpha,lambda[i])
+            cen1[i] ~ dinterval(os[i],stcen1[i])
             lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
             mu[i] <-  beta1[1] + beta1[2]*sV1[i]
           }
@@ -132,27 +137,30 @@
         }
         mtx1[j,8]<-f1[3,1]
       }
-      message("Estimates for event status (0,1) for variables:-  ", colnames(vv1),"\n")
-      return(mtx1)
+      cat("Estimates for event status (0,1) for variables:-  ", colnames(vv1),"\n")
+      print(mtx1)
     }
-
 
     if(is.numeric(dstatus2)==T){
 
+      mx2<-max(dt02$os) + 10
       surt2<-ifelse(dt02$death2 == 2, dt02$os, NA)
-      stcen2<-ifelse(dt02$death2 == 0, dt02$os, 0)
+      stcen2<-ifelse(dt02$death2 == 0, dt02$os, mx2)
       dt02$os<-surt2
+      cen2<-as.numeric(is.na(surt2))
+      dt02<-data.frame(dt02,stcen2,cen2)
 
       mtx2<-matrix(nrow=len, ncol = 8)
       colnames(mtx2)<-c("coef","SD","2.5%","25%","50%","75%","97.5%","deviance")
       rownames(mtx2)<-colnames(vv2)
 
       for(j in 1:len){
-        data2<-list(os=dt02$os, v1=vv2[,j], N = nr2)
+        data2<-list(os=dt02$os, stcen2=dt02$stcen2, cen2=dt02$cen2, v1=vv2[,j], N = nr2)
         model2<-function(){
           for (i in 1:N) {
             sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
             os[i] ~ dweib(alpha,lambda[i])
+            cen2[i] ~ dinterval(os[i],stcen2[i])
             lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
             mu[i] <-  beta2[1] + beta2[2]*sV1[i]
           }
@@ -179,8 +187,8 @@
         }
         mtx2[j,8]<-f2[3,1]
       }
-      message("Estimates for event status (0,2) for variables:-  ", colnames(vv2),"\n")
-      return(mtx2)
+      cat("Estimates for event status (0,2) for variables:-  ", colnames(vv2),"\n")
+      print(mtx2)
     }
 
   } else{

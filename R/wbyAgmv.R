@@ -73,11 +73,13 @@ wbyAgmv=function(m,n,p,q,t,STime,Event,nc,ni,data){
   len<-length(d11)
 
   d12<-data.frame(data[,c('death','os')],d11)
-  nnr<-nrow(d12)
 
+  mx<-max(d12$os) + 10
   surt<-ifelse(d12$death == 1, d12$os, NA)
-  stcen<-ifelse(d12$death == 0, d12$os, 0)
+  stcen<-ifelse(d12$death == 0, d12$os, mx)
   d12$os<-surt
+  cen<-as.numeric(is.na(surt))
+  d12<-data.frame(d12,stcen,cen)
 
   if(len>5){
     message("Outcome for first 5 covariates :")
@@ -88,11 +90,12 @@ wbyAgmv=function(m,n,p,q,t,STime,Event,nc,ni,data){
   vname<-colnames(vv)
 
   if(len==1){
-    data1<-list(os=d12$os, v1=vv[,1], N = nr, p=p, q=q, t=t)
+    data1<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], N = nr, p=p, q=q, t=t)
     modelj1<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         os[i] ~ dweib(alpha,lambda[i])
+        cen[i] ~ dinterval(os[i],stcen[i])
         lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i]
         S[i] <- exp(-log(2)*exp(( log(t) - mu[i])*sqrt(tau)))
@@ -136,12 +139,13 @@ wbyAgmv=function(m,n,p,q,t,STime,Event,nc,ni,data){
     mtx[7+q-p,]<-ost[1,]
     return(mtx)
   } else if(len==2){
-    data2<-list(os=d12$os, v1=vv[,1], v2=vv[,2], N = nr , p=p, q=q, t=t)
+    data2<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], N = nr , p=p, q=q, t=t)
     modelj2<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         os[i] ~ dweib(alpha,lambda[i])
+        cen[i] ~ dinterval(os[i],stcen[i])
         lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i]
         S[i] <- exp(-log(2)*exp(( log(t) - mu[i])*sqrt(tau)))
@@ -184,13 +188,14 @@ wbyAgmv=function(m,n,p,q,t,STime,Event,nc,ni,data){
     mtx[8+q-p,]<-ost[1,]
     return(mtx)
   } else if(len==3){
-    data3<-list(os=d12$os, v1=vv[,1], v2=vv[,2], v3=vv[,3], N = nr, p=p, q=q, t=t )
+    data3<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], v3=vv[,3], N = nr, p=p, q=q, t=t )
     modelj3<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         os[i] ~ dweib(alpha,lambda[i])
+        cen[i] ~ dinterval(os[i],stcen[i])
         lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i]
         S[i] <- exp(-log(2)*exp(( log(t) - mu[i])*sqrt(tau)))
@@ -231,7 +236,7 @@ wbyAgmv=function(m,n,p,q,t,STime,Event,nc,ni,data){
     mtx[9+q-p,]<-ost[1,]
     return(mtx)
   } else if(len==4){
-    data4<-list(os=d12$os, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], N = nr , p=p, q=q, t=t)
+    data4<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], N = nr , p=p, q=q, t=t)
     modelj4<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -239,6 +244,7 @@ wbyAgmv=function(m,n,p,q,t,STime,Event,nc,ni,data){
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         os[i] ~ dweib(alpha,lambda[i])
+        cen[i] ~ dinterval(os[i],stcen[i])
         lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i]
         + beta[5]*sV4[i]
@@ -283,7 +289,7 @@ wbyAgmv=function(m,n,p,q,t,STime,Event,nc,ni,data){
     return(mtx)
 
   } else {
-    data5<-list(os=d12$os, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], v5=vv[,5], N = nr, p=p, q=q,t=t)
+    data5<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], v3=vv[,3], v4=vv[,4], v5=vv[,5], N = nr, p=p, q=q,t=t)
     modelj5<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -292,6 +298,7 @@ wbyAgmv=function(m,n,p,q,t,STime,Event,nc,ni,data){
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         sV5[i] <- (v5[i]-mean(v5[]))/sd(v5[])
         os[i] ~ dweib(alpha,lambda[i])
+        cen[i] ~ dinterval(os[i],stcen[i])
         lambda[i] <- log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i] + beta[5]*sV4[i] + beta[6]*sV5[i]
         S[i] <- exp(-log(2)*exp(( log(t) - mu[i])*sqrt(tau)))

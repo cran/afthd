@@ -77,9 +77,14 @@
   d12<-data.frame(data[,c('death','os')],d11)
   nnr<-nrow(d12)
 
+  mx<-max(d12$os) + 100
   surt<-ifelse(d12$death == 1, d12$os, NA)
-  stcen<-ifelse(d12$death == 0, d12$os, 0)
+  stcen<-ifelse(d12$death == 0, d12$os, mx)
+  stcen1<-log(stcen)
+  ls<-log(surt)
   d12$os<-surt
+  cen<-as.numeric(is.na(surt))
+  d12<-data.frame(d12,stcen,cen,ls,stcen1)
 
   if(len>5){
     cat("Outcome for first 5 covariates : ")
@@ -90,12 +95,13 @@
   vname<-colnames(vv)
 
   if(len==1){
-    data1<-list(os=d12$os, v1=vv[,1], N = nr)
+    data1<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], N = nr)
     modelj1<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         os[i] ~ dweib(alpha,lambda[i])
-        lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
+        cen[i] ~ dinterval(os[i],stcen[i])
+        lambda[i] <- log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i]
       }
       alpha <- sqrt(tau)
@@ -114,11 +120,12 @@
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
     f1=data.frame(jagsft1$BUGSoutput$summary)
 
-    data2<-list(os=d12$os, v1=vv[,1], N = nr)
+    data2<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], N = nr)
     modelj2<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         os[i] ~ dlnorm(mu[i], tau)
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i]
       }
       for(i in 1:2){
@@ -136,12 +143,12 @@
                    parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
     f2=data.frame(jagsft2$BUGSoutput$summary)
 
-    data3<-list(os=d12$os, v1=vv[,1], N = nr)
+    data3<-list(os=d12$ls, stcen=d12$stcen1, cen=d12$cen, v1=vv[,1], N = nr)
     modelj3<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         os[i] ~ dlogis(mu[i], taustar)
-        logos[i]<-os[i]
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <- beta[1] + beta[2]*sV1[i]
       }
       taustar <- sqrt(tau)
@@ -152,7 +159,7 @@
       }
       tau ~ dgamma(0.001,0.001)
       sigma <- sqrt(1/tau)
-      junk1 <- os[1]
+      junk1 <- exp(os[1])
     }
     inits3 <- function() {
       list(beta=c(0,0), tau=1)
@@ -163,12 +170,13 @@
     f3=data.frame(jagsft3$BUGSoutput$summary)
 
   } else if(len==2){
-    data1<-list(os=d12$os, v1=vv[,1], v2=vv[,2], N = nr)
+    data1<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2], N = nr)
     modelj1<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         os[i] ~ dweib(alpha,lambda[i])
+        cen[i] ~ dinterval(os[i],stcen[i])
         lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i]+beta[3]*sV2[i]
       }
@@ -188,12 +196,13 @@
                     parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
     f1=data.frame(jagsft1$BUGSoutput$summary)
 
-    data2<-list(os=d12$os, v1=vv[,1],v2=vv[,2], N = nr)
+    data2<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1],v2=vv[,2], N = nr)
     modelj2<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         os[i] ~ dlnorm(mu[i], tau)
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i]
       }
       for(i in 1:3){
@@ -211,13 +220,13 @@
                     parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
     f2=data.frame(jagsft2$BUGSoutput$summary)
 
-    data3<-list(os=d12$os, v1=vv[,1],v2=vv[,2], N = nr)
+    data3<-list(os=d12$ls, stcen=d12$stcen1, cen=d12$cen, v1=vv[,1],v2=vv[,2], N = nr)
     modelj3<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         os[i] ~ dlogis(mu[i], taustar)
-        logos[i]<-os[i]
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <- beta[1] + beta[2]*sV1[i] +beta[3]*sV2[i]
       }
       taustar <- sqrt(tau)
@@ -228,7 +237,7 @@
       }
       tau ~ dgamma(0.001,0.001)
       sigma <- sqrt(1/tau)
-      junk1 <- os[1]
+      junk1 <- exp(os[1])
     }
     inits3 <- function() {
       list(beta=c(0,0,0), tau=1)
@@ -239,13 +248,14 @@
     f3=data.frame(jagsft3$BUGSoutput$summary)
 
   } else if(len==3){
-    data1<-list(os=d12$os, v1=vv[,1], v2=vv[,2],v3=vv[,3], N = nr)
+    data1<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2],v3=vv[,3], N = nr)
     modelj1<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         os[i] ~ dweib(alpha,lambda[i])
+        cen[i] ~ dinterval(os[i],stcen[i])
         lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i]+beta[3]*sV2[i] + beta[4]*sV3[i]
       }
@@ -265,13 +275,14 @@
                     parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
     f1=data.frame(jagsft1$BUGSoutput$summary)
 
-    data2<-list(os=d12$os, v1=vv[,1],v2=vv[,2], v3=vv[,3], N = nr)
+    data2<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1],v2=vv[,2], v3=vv[,3], N = nr)
     modelj2<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         os[i] ~ dlnorm(mu[i], tau)
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i]
       }
       for(i in 1:4){
@@ -290,14 +301,14 @@
                     parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
     f2=data.frame(jagsft2$BUGSoutput$summary)
 
-    data3<-list(os=d12$os, v1=vv[,1],v2=vv[,2], v3=vv[,3], N = nr)
+    data3<-list(os=d12$ls, stcen=d12$stcen1, cen=d12$cen, v1=vv[,1],v2=vv[,2], v3=vv[,3], N = nr)
     modelj3<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
         sV2[i] <- (v2[i]-mean(v2[]))/sd(v2[])
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         os[i] ~ dlogis(mu[i], taustar)
-        logos[i]<-os[i]
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <- beta[1] + beta[2]*sV1[i] +beta[3]*sV2[i] + beta[4]*sV3[i]
       }
       taustar <- sqrt(tau)
@@ -308,7 +319,7 @@
       }
       tau ~ dgamma(0.001,0.001)
       sigma <- sqrt(1/tau)
-      junk1 <- os[1]
+      junk1 <- exp(os[1])
     }
     inits3 <- function() {
       list(beta=c(0,0,0,0), tau=1)
@@ -318,7 +329,7 @@
                     n.iter = ni)
     f3=data.frame(jagsft3$BUGSoutput$summary)
   } else if(len==4){
-    data1<-list(os=d12$os, v1=vv[,1], v2=vv[,2],v3=vv[,3],v4=vv[,4], N = nr)
+    data1<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2],v3=vv[,3],v4=vv[,4], N = nr)
     modelj1<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -326,6 +337,7 @@
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         os[i] ~ dweib(alpha,lambda[i])
+        cen[i] ~ dinterval(os[i],stcen[i])
         lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i]+beta[3]*sV2[i] + beta[4]*sV3[i] + beta[5]*sV4[i]
       }
@@ -345,7 +357,7 @@
                     parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
     f1=data.frame(jagsft1$BUGSoutput$summary)
 
-    data2<-list(os=d12$os, v1=vv[,1],v2=vv[,2], v3=vv[,3],v4=vv[,4], N = nr)
+    data2<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1],v2=vv[,2], v3=vv[,3],v4=vv[,4], N = nr)
     modelj2<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -353,6 +365,7 @@
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         os[i] ~ dlnorm(mu[i], tau)
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i] + beta[5]*sV4[i]
       }
       for(i in 1:5){
@@ -370,7 +383,7 @@
                     parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
     f2=data.frame(jagsft2$BUGSoutput$summary)
 
-    data3<-list(os=d12$os, v1=vv[,1],v2=vv[,2], v3=vv[,3],v4=vv[,4], N = nr)
+    data3<-list(os=d12$ls, stcen=d12$stcen1, cen=d12$cen, v1=vv[,1],v2=vv[,2], v3=vv[,3],v4=vv[,4], N = nr)
     modelj3<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -378,7 +391,7 @@
         sV3[i] <- (v3[i]-mean(v3[]))/sd(v3[])
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         os[i] ~ dlogis(mu[i], taustar)
-        logos[i]<-os[i]
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <- beta[1] + beta[2]*sV1[i] +beta[3]*sV2[i] + beta[4]*sV3[i] + beta[5]*sV4[i]
       }
       taustar <- sqrt(tau)
@@ -389,7 +402,7 @@
       }
       tau ~ dgamma(0.001,0.001)
       sigma <- sqrt(1/tau)
-      junk1 <- os[1]
+      junk1 <- exp(os[1])
     }
     inits3 <- function() {
       list(beta=c(0,0,0,0,0), tau=1)
@@ -399,7 +412,7 @@
                     n.iter = ni)
     f3=data.frame(jagsft3$BUGSoutput$summary)
   } else{
-    data1<-list(os=d12$os, v1=vv[,1], v2=vv[,2],v3=vv[,3],v4=vv[,4],v5=vv[,5], N = nr)
+    data1<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1], v2=vv[,2],v3=vv[,3],v4=vv[,4],v5=vv[,5], N = nr)
     modelj1<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -408,6 +421,7 @@
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         sV5[i] <- (v5[i]-mean(v5[]))/sd(v5[])
         os[i] ~ dweib(alpha,lambda[i])
+        cen[i] ~ dinterval(os[i],stcen[i])
         lambda[i] <-  log(2)*exp(-mu[i]*sqrt(tau))
         mu[i] <-  beta[1] + beta[2]*sV1[i]+beta[3]*sV2[i] + beta[4]*sV3[i] + beta[5]*sV4[i]+ beta[6]*sV5[i]
       }
@@ -427,7 +441,7 @@
                     parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
     f1=data.frame(jagsft1$BUGSoutput$summary)
 
-    data2<-list(os=d12$os, v1=vv[,1],v2=vv[,2], v3=vv[,3],v4=vv[,4], v5=vv[,5],N = nr)
+    data2<-list(os=d12$os, stcen=d12$stcen, cen=d12$cen, v1=vv[,1],v2=vv[,2], v3=vv[,3],v4=vv[,4], v5=vv[,5],N = nr)
     modelj2<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -436,6 +450,7 @@
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         sV5[i] <- (v5[i]-mean(v5[]))/sd(v5[])
         os[i] ~ dlnorm(mu[i], tau)
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <-  beta[1] + beta[2]*sV1[i] + beta[3]*sV2[i] + beta[4]*sV3[i] + beta[5]*sV4[i]+ beta[6]*sV5[i]
       }
       for(i in 1:6){
@@ -454,7 +469,7 @@
                     parameters.to.save = c('beta','tau','sigma'), n.chains=nc, n.iter = ni)
     f2=data.frame(jagsft2$BUGSoutput$summary)
 
-    data3<-list(os=d12$os, v1=vv[,1],v2=vv[,2], v3=vv[,3],v4=vv[,4], v5=vv[,5],N = nr)
+    data3<-list(os=d12$ls, stcen=d12$stcen1, cen=d12$cen, v1=vv[,1],v2=vv[,2], v3=vv[,3],v4=vv[,4], v5=vv[,5],N = nr)
     modelj3<-function(){
       for (i in 1:N) {
         sV1[i] <- (v1[i]-mean(v1[]))/sd(v1[])
@@ -463,7 +478,7 @@
         sV4[i] <- (v4[i]-mean(v4[]))/sd(v4[])
         sV5[i] <- (v5[i]-mean(v5[]))/sd(v5[])
         os[i] ~ dlogis(mu[i], taustar)
-        logos[i]<-os[i]
+        cen[i] ~ dinterval(os[i],stcen[i])
         mu[i] <- beta[1] + beta[2]*sV1[i] +beta[3]*sV2[i] + beta[4]*sV3[i] + beta[5]*sV4[i] + beta[6]*sV5[i]
       }
       taustar <- sqrt(tau)
@@ -474,7 +489,7 @@
       }
       tau ~ dgamma(0.001,0.001)
       sigma <- sqrt(1/tau)
-      junk1 <- os[1]
+      junk1 <- exp(os[1])
     }
     inits3 <- function() {
       list(beta=c(0,0,0,0,0,0), tau=1)
@@ -488,24 +503,24 @@
   cat("Estimates for variables: ", vname,"\n")
   f <- min(f1[(len+2),1],f2[(len+2),1],f3[(len+2),1])
   if(f1[(len+2),1]==f){
-    message("First initialization belongs to Weibull distribution.")
-    message("Second initialization belongs to log normal distribution.")
-    message("Third initialization belongs to log logistic distribution.")
-    cat("Estimates for weibull distribution, which is found suitable with minimal DIC value:-")
+    cat("First initialization belongs to Weibull distribution.","\n")
+    cat("Second initialization belongs to log normal distribution.","\n")
+    cat("Third initialization belongs to log logistic distribution.","\n")
+    cat("Estimates for weibull distribution, which is found suitable with minimal DIC value: ","\n")
     return(f1)
   }
   if(f2[(len+2),1]==f){
-    message("First initialization belongs to Weibull distribution.")
-    message("Second initialization belongs to log normal distribution.")
-    message("Third initialization belongs to log logistic distribution.")
-    cat("Estimates for log normal distribution, which is found suitable with minimal DIC value:-")
+    cat("First initialization belongs to Weibull distribution.","\n")
+    cat("Second initialization belongs to log normal distribution.","\n")
+    cat("Third initialization belongs to log logistic distribution.","\n")
+    cat("Estimates for log normal distribution, which is found suitable with minimal DIC value:","\n")
     return(f2)
   }
   if(f3[(len+2),1]==f){
-    message("First initialization belongs to Weibull distribution.")
-    message("Second initialization belongs to log normal distribution.")
-    message("Third initialization belongs to log logistic distribution.")
-    cat("Estimates for log logistic, which is found suitable with minimal DIC value:-")
+    cat("First initialization belongs to Weibull distribution.","\n")
+    cat("Second initialization belongs to log normal distribution.","\n")
+    cat("Third initialization belongs to log logistic distribution.","\n")
+    cat("Estimates for log logistic, which is found suitable with minimal DIC value:","\n")
     return(f3)
   }
 }
